@@ -23,12 +23,13 @@ export default function App() {
 
   const [items, setItems] = useState<Item[]>(ItemsInitial);
 
-  useEffect(() => {}, []);
-
+  // We can put these two handles into its own component
+  // Handles SetItem update.
   const handleUpdateItem = (_items: Item[]) => {
     setItems(_items);
   };
 
+  // Handles the Checked state for each item.
   const handleCheckboxChange = (_item: Item) => {
     const index = items.findIndex((item) => item.name === _item.name);
     if (index !== -1) {
@@ -38,6 +39,8 @@ export default function App() {
       setItems(newItems);
     }
   };
+
+  //////////////////////////////////////////////////////
 
   return (
     <div className="App">
@@ -50,65 +53,8 @@ export default function App() {
   );
 }
 
-function MoveItem(items: Item[], _moveSide: string, handleUpdateItem: any) {
-  const moveSide = (side: string) => {
-    const newItems = [...items];
-    for (let i = 0; i < items.length; i++) {
-      if (!newItems[i].boxLeft && newItems[i].checked && side === "moveLeft") {
-        newItems[i].boxLeft = !newItems[i].boxLeft;
-        newItems[i].checked = !newItems[i].checked;
-      }
-      if (newItems[i].boxLeft && newItems[i].checked && side === "moveRight") {
-        newItems[i].boxLeft = !newItems[i].boxLeft;
-        newItems[i].checked = !newItems[i].checked;
-      }
-    }
-    return newItems;
-  };
-
-  return handleUpdateItem(moveSide(_moveSide));
-}
-
-function RenderList({
-  items,
-  side,
-  handleCheckboxChange,
-}: {
-  items: Item[];
-  side: string;
-  handleCheckboxChange: any;
-}) {
-  function RenderListItem({ item, index }: { item: Item; index: number }) {
-    return (
-      <div key={index} className="itemCheckBox boxItem">
-        <input
-          type="checkbox"
-          id={item.name}
-          checked={item.checked}
-          onChange={() => handleCheckboxChange(item)}
-        />
-        <label>{item.name}</label>
-      </div>
-    );
-  }
-
-  return (
-    <div className="boxItems">
-      {items.map((item, index) =>
-        side === "left" ? (
-          item.boxLeft ? (
-            <RenderListItem item={item} index={index} />
-          ) : null
-        ) : side === "right" ? (
-          !item.boxLeft ? (
-            <RenderListItem item={item} index={index} />
-          ) : null
-        ) : null
-      )}
-    </div>
-  );
-}
-
+///////////////////////// BoxManager Component /////////////////////////////////
+// Main function of the component
 function ListInterface({
   items,
   handleUpdateItem,
@@ -120,7 +66,8 @@ function ListInterface({
 }) {
   return (
     <div className="boxcontainer">
-      <div className="box">
+      <div className="box" key="Left_Box">
+        Left Box
         <RenderList
           items={items}
           side="left"
@@ -128,7 +75,7 @@ function ListInterface({
         />
       </div>
 
-      <div className="flexCenter">
+      <div className="flexCenter" key="move_Buttons">
         <button
           onClick={() => MoveItem(items, "moveRight", handleUpdateItem)}
           className="moveButton"
@@ -142,7 +89,9 @@ function ListInterface({
           Move Left
         </button>
       </div>
-      <div className="box">
+
+      <div className="box" key="Right_Box">
+        Right Box
         <RenderList
           items={items}
           side="right"
@@ -152,3 +101,75 @@ function ListInterface({
     </div>
   );
 }
+
+// Move items left to right or right to left based on the move side string.
+function MoveItem(items: Item[], _moveSide: string, handleUpdateItem: any) {
+  // Move items left to right or right to left based on the move side string.
+  const moveSide = (side: string) => {
+    const newItems = [...items];
+
+    // Loop through each item
+    // if item is not on left box and checked and desired move direction is left, then move left.
+    // if item is on left box and checked and desired move direction is left, then move right.
+    for (let i = 0; i < items.length; i++) {
+      if (!newItems[i].boxLeft && newItems[i].checked && side === "moveLeft") {
+        newItems[i].boxLeft = !newItems[i].boxLeft;
+        newItems[i].checked = !newItems[i].checked;
+      }
+
+      if (newItems[i].boxLeft && newItems[i].checked && side === "moveRight") {
+        newItems[i].boxLeft = !newItems[i].boxLeft;
+        newItems[i].checked = !newItems[i].checked;
+      }
+    }
+    return newItems;
+  };
+
+  // Updates item state through handler
+  return handleUpdateItem(moveSide(_moveSide));
+}
+
+// Manages rendering of each item in the list, handle check box change passed into here
+function RenderList({
+  items,
+  side,
+  handleCheckboxChange,
+}: {
+  items: Item[];
+  side: string;
+  handleCheckboxChange: any;
+}) {
+  function RenderListItem({ item }: { item: Item }) {
+    return (
+      <li className="itemCheckBox boxItem" key={item.name} id={item.name}>
+        <label>
+          <input
+            type="checkbox"
+            checked={item.checked}
+            onChange={() => handleCheckboxChange(item)}
+          />
+          {item.name}
+        </label>
+      </li>
+    );
+  }
+
+  return (
+    // If the side is left and leftbox is true, then render, else dont.
+    // if item is not on left box and checked and desired move direction is left, then move left.
+    <div className="boxItems">
+      {items.map((item) =>
+        side === "left" ? (
+          item.boxLeft ? (
+            <RenderListItem item={item} />
+          ) : null
+        ) : side === "right" ? (
+          !item.boxLeft ? (
+            <RenderListItem item={item} />
+          ) : null
+        ) : null,
+      )}
+    </div>
+  );
+}
+
